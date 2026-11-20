@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="La-JEPA: Compact Robot Policies with Latent World Modeling. Paper, method, results, and real-robot rollouts.">
+  <meta name="theme-color" content="#ffffff">
+  <title>La-JEPA: Compact Robot Policies with Latent World Modeling</title>
+  <link rel="icon" href="assets/web/favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="La-JEPA: Compact Robot Policies with Latent World Modeling">
+  <meta property="og:description" content="A small robot policy trained from scratch in V-JEPA 2.1 feature space: state of the art among policies without robot-data pretraining on RoboTwin 2.0 and LIBERO-Plus, with far fewer parameters.">
+  <meta property="og:image" content="https://mt-clemente.github.io/lajepa/assets/web/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="La-JEPA: Compact Robot Policies with Latent World Modeling">
+  <meta name="twitter:image" content="https://mt-clemente.github.io/lajepa/assets/web/og.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="hero page-width">
+  <h1><span>La-JEPA:</span> Compact Robot Policies<br class="desktop-break"> with Latent World Modeling</h1>
+  <p class="tldr">A compact world-action policy trained from scratch in V-JEPA 2.1 feature space: state of the art among policies without embodied pretraining on RoboTwin 2.0 and LIBERO-Plus, with far fewer parameters and 2-5x faster inference than video-generator WAMs.</p>
+  <p class="authors">Mateo Clémente<sup>1</sup><span>George Z. Xue<sup>2,*</sup></span><span>Amin Abyaneh<sup>3,*</sup></span><span>Liheng Ma<sup>4</sup></span><span>Rui Heng Yang<sup>1</sup></span><span>Tongtong Cao<sup>1</sup></span><span>Zhanguang Zhang<sup>1</sup></span><span>Yingxue Zhang<sup>1</sup></span></p>
+  <p class="affiliations"><span><sup>1</sup> Huawei Technologies Ltd.</span><span><sup>2</sup> University of Toronto</span><span><sup>3</sup> McGill University</span><span><sup>4</sup> Mila – Quebec Artificial Intelligence Institute</span></p>
+  <p class="intern-note">* Work done as interns at Huawei.</p>
+  <nav class="links" aria-label="Paper resources">
+    <a class="resource primary" href="https://arxiv.org/abs/2611.08156">Paper <span>(arXiv)</span></a>
+    <a class="resource models" href="https://github.com/mt-clemente/lajepa" aria-disabled="true">Code <span>(GitHub)</span><small class="coming-soon">Coming soon</small></a>
+    <!-- Code and Checkpoints are disabled ("Coming soon"): set the real href and remove aria-disabled to enable each. The coming-soon label hides automatically. -->
+    <a class="resource models" href="HF_URL_TODO" aria-disabled="true">Checkpoints <span>(Hugging Face)</span><small class="coming-soon">Coming soon</small></a>
+  </nav>
+</header>
+<main id="main" class="page-width">
+  <nav class="section-nav" aria-label="Sections"><a href="#idea">The idea</a><a href="#results">Results</a><a href="#how">How it works</a><a href="#matters">What matters</a><a href="#liberoplus">LIBERO-Plus</a><a href="#robot">Real robot</a><a href="#paper">Paper</a></nav>
+  <section class="teaser" aria-label="La-JEPA on a real robot, with the features it sees">
+    <div class="triptych">
+      <figure class="triptych-row"><div class="vwrap"><video autoplay muted loop playsinline preload="metadata" poster="assets/web/triptych/cube_placement_triptych.png" width="1200" height="400" aria-label="Cube placement: camera, V-JEPA 2.1 features, Wan2.2 VAE latents"><source src="assets/web/triptych/cube_placement_triptych.mp4" type="video/mp4"></video><div class="panel-labels" aria-hidden="true"><span>Camera</span><span>V-JEPA 2.1</span><span>Video VAE</span></div></div><figcaption>Cube placement</figcaption></figure>
+      <figure class="triptych-row"><div class="vwrap"><video autoplay muted loop playsinline preload="metadata" poster="assets/web/triptych/fruit_picking_triptych.png" width="1200" height="400" aria-label="Fruit picking: camera, V-JEPA 2.1 features, Wan2.2 VAE latents"><source src="assets/web/triptych/fruit_picking_triptych.mp4" type="video/mp4"></video><div class="panel-labels" aria-hidden="true"><span>Camera</span><span>V-JEPA 2.1</span><span>Video VAE</span></div></div><figcaption>Fruit picking</figcaption></figure>
+      <figure class="triptych-row"><div class="vwrap"><video autoplay muted loop playsinline preload="metadata" poster="assets/web/triptych/push_t_triptych.png" width="1200" height="400" aria-label="Push T: camera, V-JEPA 2.1 features, Wan2.2 VAE latents"><source src="assets/web/triptych/push_t_triptych.mp4" type="video/mp4"></video><div class="panel-labels" aria-hidden="true"><span>Camera</span><span>V-JEPA 2.1</span><span>Video VAE</span></div></div><figcaption>Push T</figcaption></figure>
+      <figure class="triptych-row"><div class="vwrap"><video autoplay muted loop playsinline preload="metadata" poster="assets/web/triptych/dishes_and_utensils_triptych.png" width="1200" height="400" aria-label="Dishes and utensils: camera, V-JEPA 2.1 features, Wan2.2 VAE latents"><source src="assets/web/triptych/dishes_and_utensils_triptych.mp4" type="video/mp4"></video><div class="panel-labels" aria-hidden="true"><span>Camera</span><span>V-JEPA 2.1</span><span>Video VAE</span></div></div><figcaption>Dishes and utensils</figcaption></figure>
+    </div>
+    <p class="caption">La-JEPA running on a Franka Panda (videos at 1.5× speed). Next to each camera view: the <strong>V-JEPA 2.1 features</strong> La-JEPA works in, and the <strong>video-VAE latents</strong> that video-generator policies work in, each projected to colours. In V-JEPA's space the robot, the objects, the table and the wall each get their own colour; the VAE mostly re-encodes appearance.</p>
+    <details class="fineprint"><summary>How these videos were made</summary><p>One PCA per representation, shared across all four videos, so a colour means the same thing in every clip. Both feature panels get the same display treatment: features are smoothed over time along the optical flow of the camera video, then lightly upscaled with an edge-aware filter guided by the camera image. VAE: Wan2.2, the video model behind Fast-WAM and Faster-WAM.</p></details>
+    <button class="text-button" id="motion-toggle" type="button" aria-pressed="false">Pause videos</button>
+  </section>
+
+  <section class="story" id="idea" aria-labelledby="idea-title">
+    <h2 id="idea-title">Pick the space first, then build your policy in it</h2>
+    <p>Recent world-action models start from a large video generator and fine-tune it to output robot actions. That brings useful pretraining, but also the generator's size and its latent space: a video VAE built to reconstruct pixels, not to control a robot.</p>
+    <p>We try the opposite. <strong>La-JEPA</strong> picks a latent space suited to control, the features of <strong>V-JEPA 2.1</strong>, a self-supervised video encoder whose features describe objects and motion, and trains a compact policy <strong>from scratch</strong> in that space. No generative backbone, no robot-data pretraining.</p>
+  </section>
+
+  <section id="results" aria-labelledby="results-title">
+    <h2 id="results-title" class="sota-title"><span>State-of-the-art</span> performance</h2>
+    <p class="sota-sub">Among methods with no embodied pretraining, La-JEPA is <strong>#1 on RoboTwin 2.0 and LIBERO-Plus</strong>.</p>
+    <div class="chips"><span class="no"><b>✕</b> No VLM</span><span class="no"><b>✕</b> No video generator</span><span class="no"><b>✕</b> No generative pretraining</span><span class="yes">Just V-JEPA 2.1</span></div>
+    <div class="medals">
+      <a class="medal" href="#fig1" data-show-panel="robotwin_ood"><span class="one">#1</span><div class="v">86.2%</div><div class="bench">RoboTwin · Clean → Clean</div><div class="ctx">clean training, clean scenes</div><div class="vs"><b>+8.4</b> over Fast-WAM, 12× smaller</div></a>
+      <a class="medal" href="#fig1" data-show-panel="robotwin_ood"><span class="one">#1</span><div class="v">35.4%</div><div class="bench">RoboTwin · Clean → Randomized</div><div class="ctx">clean training, unseen scenes</div><div class="vs"><b>+12.8</b> over RoboManip-scratch</div></a>
+      <a class="medal" href="#fig1" data-show-panel="robotwin_full"><span class="one">#1</span><div class="v">93.7%</div><div class="bench">RoboTwin · Full training</div><div class="ctx">mean of clean and randomized</div><div class="vs"><b>+0.3</b> over ImageWAM, 3× smaller</div></a>
+      <a class="medal" href="#fig1" data-show-panel="libero_ood"><span class="one">#1</span><div class="v">88.0%</div><div class="bench">LIBERO-Plus</div><div class="ctx">corrected instructions</div><div class="vs"><b>+1.8</b> over NowWAM, 4× smaller</div></a>
+    </div>
+    <p class="foot">Sizes compare deployed parameters, frozen encoders included. Full-training XL: one training seed.</p>
+    <div class="speed">
+      <div class="speed-txt"><h3 class="fast-h">Fast and small</h3><p>La-JEPA S and B decide in <strong>18–25 ms</strong>, faster than every baseline we timed, while being <strong>several times smaller</strong> and <strong>more accurate</strong> on LIBERO-Plus.</p><p class="speed-fine">All methods compiled, same GPU. Size: deployed parameters. * axis cut.</p></div>
+      <div><div class="lat-hdr"><span></span><span>Time per call</span><span></span><span>Size</span></div>
+      <div class="lat" role="img" aria-label="Time per policy call (bar length), LIBERO-Plus success (bar colour) and deployed size"><div class="lat-row r2 us" title="LIBERO-Plus 86.3%"><span class="n">La-JEPA S</span><span class="t"><i style="width:6.4%;background:#75cd58"></i></span><span class="v">18 ms</span><span class="pill pr">0.74B</span></div><div class="lat-row r2 us" title="LIBERO-Plus 87.3%"><span class="n">La-JEPA B</span><span class="t"><i style="width:9.0%;background:#c5dc3a"></i></span><span class="v">25 ms</span><span class="pill pr">0.98B</span></div><div class="lat-row r2" title="LIBERO-Plus 86.2%"><span class="n">NowWAM</span><span class="t"><i style="width:15.8%;background:#6dcc5b"></i></span><span class="v">44 ms</span><span class="pill pr">7.1B</span></div><div class="lat-row r2" title="LIBERO-Plus n/a"><span class="n">Faster-WAM</span><span class="t"><i style="width:18.2%;background:repeating-linear-gradient(45deg,#d5dbe0 0 4px,#eef1f3 4px 8px)"></i></span><span class="v">51 ms</span><span class="pill pr">11.4B</span></div><div class="lat-row r2 us" title="LIBERO-Plus 88.0%"><span class="n">La-JEPA L</span><span class="t"><i style="width:21.3%;background:#fde725"></i></span><span class="v">60 ms</span><span class="pill pr">1.78B</span></div><div class="lat-row r2" title="LIBERO-Plus 85.7%"><span class="n">π<sub>0.5</sub></span><span class="t"><i style="width:25.7%;background:#54c068"></i></span><span class="v">72 ms</span><span class="pill pr">3.35B</span></div><div class="lat-row r2" title="LIBERO-Plus 70.8%"><span class="n">Fast-WAM</span><span class="t"><i style="width:31.5%;background:#440154"></i></span><span class="v">88 ms</span><span class="pill pr">12.4B</span></div><div class="lat-row r2" title="LIBERO-Plus 80.4%"><span class="n">ImageWAM</span><span class="t"><i style="width:46.1%;background:#42115f"></i></span><span class="v">129 ms</span><span class="pill pr">8.6B</span></div><div class="lat-row r2" title="LIBERO-Plus 84.9%"><span class="n">Cosmos Policy*</span><span class="t brk"><i style="width:100.0%;background:#3caa79"></i><b class="cut"></b></span><span class="v">660 ms</span><span class="pill pr">7B</span></div></div>
+      <div class="lat-legend"><span>LIBERO-Plus success</span><span>≤80%</span><span class="g" style="background:linear-gradient(90deg,#440154,#40216a,#3c4180,#355e8b,#2b778b,#21918c,#39a77b,#51bd6a,#7dcf55,#bddb3d,#fde725)"></span><span>88%</span><span class="na"></span><span>n/a</span></div></div>
+    </div>
+    <p class="lead scale-line">And it scales: with the full RoboTwin training set, mean success rises with every model size, from 89.3% (S, 0.1B) to 93.7% (XL, 2.1B).</p>
+    <figure class="chart-figure" id="fig1">
+      <div class="chart-tabs" id="fig1-tabs" role="tablist" aria-label="Benchmark">
+        <button type="button" role="tab" data-panel="libero_ood">LIBERO-Plus</button><button type="button" role="tab" data-panel="robotwin_ood">RoboTwin, clean training</button><button type="button" role="tab" data-panel="robotwin_full">RoboTwin, full training</button>
+      </div>
+      <div class="chart-legend" aria-hidden="true"><span><i style="background:#2a78d6"></i>La-JEPA (from scratch, ours)</span><span><i style="background:#eb6834"></i>Generator-initialized</span><span><i style="background:#1baf7a"></i>VLM-initialized</span></div>
+      <div class="chart-host" id="fig1-chart"></div>
+      <figcaption>Success against deployed parameters, frozen encoders included. Hover a point for details. <span id="fig1-note"></span></figcaption>
+      <details class="chart-table"><summary>Show as a table</summary><table><thead><tr><th>Method</th><th>Type</th><th>Deployed (B)</th><th>Success (%)</th></tr></thead><tbody id="fig1-tbody"></tbody></table></details>
+    </figure>
+  </section>
+
+  <section class="story" id="how" aria-labelledby="how-title">
+    <h2 id="how-title">How it works</h2>
+    <ol class="steps">
+      <li><strong>See.</strong> V-JEPA 2.1 turns the latest camera frames into a grid of features; the policy lightly adapts the encoder with LoRA.</li>
+      <li><strong>Imagine, during training only.</strong> A World DiT learns to predict the features of the coming frames, while an Action DiT learns to predict the next chunk of actions. Both are trained from scratch.</li>
+      <li><strong>Act fast.</strong> At test time the future is never generated: only actions are sampled. Predicting the future is purely a training signal, so the policy stays small and quick.</li>
+    </ol>
+    <figure class="paper-figure"><img src="assets/web/figures/architecture.svg" width="1600" height="515" alt="La-JEPA architecture with a V-JEPA 2.1 encoder, World DiT, and Action DiT" loading="lazy"><figcaption>La-JEPA trains a World DiT and an Action DiT from scratch in the feature space of a frozen-or-LoRA-adapted V-JEPA 2.1 encoder. Future features are predicted jointly with actions during training; at inference only actions are generated.</figcaption></figure>
+  </section>
+
+  <section id="matters" aria-labelledby="matters-title">
+    <h2 id="matters-title">What actually matters</h2>
+    <p class="lead">We remove one ingredient at a time from the small model and measure the loss. <strong>The latent space matters most</strong>: swapping V-JEPA features for the video VAE used by video-generator policies costs up to 28 points in randomized RoboTwin scenes. <strong>Predicting the future helps everywhere</strong> (2 to 5 points), even though the policy never predicts it at test time. <strong>Image augmentation</strong> is what makes the policy hold up in new scenes.</p>
+    <figure class="chart-figure" id="ablation">
+      <div class="chart-legend" aria-hidden="true"><span><i style="background:#1baf7a"></i>LIBERO</span><span><i class="hatch" style="--c:#1baf7a"></i>LIBERO-Plus</span><span><i style="background:#eb6834"></i>RoboTwin clean</span><span><i class="hatch" style="--c:#eb6834"></i>RoboTwin randomized</span></div>
+      <div class="chart-host" id="abl-chart"></div>
+      <figcaption>Loss in success (points) when each component is removed from the final S recipe, all else fixed (one training seed; whiskers: 95% intervals where recorded). Solid: in-distribution; hatched: out-of-distribution. LIBERO-Plus here uses the released instructions.</figcaption>
+      <details class="chart-table"><summary>Show as a table</summary><table><thead><tr><th>Removed</th><th>LIBERO</th><th>LIBERO-Plus</th><th>RoboTwin clean</th><th>RoboTwin rand.</th></tr></thead><tbody id="abl-tbody"></tbody></table></details>
+    </figure>
+  </section>
+
+  <section id="liberoplus" aria-labelledby="lplus-title">
+    <h2 id="lplus-title">A benchmark bug we fixed along the way</h2>
+    <p class="lead">LIBERO-Plus tests robustness by perturbing camera, lighting, layout and more. But its released evaluator also appends the perturbation's settings to the instruction in <strong>8,493 of its 10,030 variants</strong>, so most variants silently test a second thing: a corrupted instruction. We restore the instructions and re-evaluate open policies under one protocol.</p>
+    <div class="instr-cards">
+      <div class="instr-card"><div class="instr-tag">Training instruction (and ours, corrected)</div><p>pick up the alphabet soup and place it in the basket</p></div>
+      <div class="instr-card bad"><div class="instr-tag">Released evaluator, camera-viewpoint variant</div><p>pick up the alphabet soup and place it in the basket <mark>view 0 0 100 2 4 initstate 0</mark></p></div>
+    </div>
+    <figure class="lplus-figure">
+      <div class="lplus-legend" aria-hidden="true"><span><i class="dot rel"></i>Released instructions</span><span><i class="dot cor"></i>Corrected instructions</span></div>
+      <div id="lplus-chart" role="img" aria-label="LIBERO-Plus success with released and corrected instructions for each policy"></div>
+      <figcaption>LIBERO-Plus success (%) on all 10,030 variants, every policy evaluated in our harness. The corruption costs policies between 0 and 19 points, so released-instruction scores partly rank policies by their sensitivity to corrupted text. †: embodied pretraining.</figcaption>
+      <details class="lplus-table"><summary>Show as a table</summary><table><thead><tr><th>Policy</th><th>Released</th><th>Corrected</th><th>Change</th></tr></thead><tbody id="lplus-tbody"></tbody></table></details>
+    </figure>
+  </section>
+
+  <section id="robot" aria-labelledby="robot-title">
+    <h2 id="robot-title">On a real robot</h2>
+    <p class="lead">On four Franka Panda tasks, from cube placement to contact-rich pushing and multi-step dish handling, La-JEPA trained only on the task demonstrations reaches the highest average success among policies without robot pretraining, comparable to π<sub>0.5</sub>, which is pretrained on large robot datasets. Wrist-camera view in the top-left corner; videos at 1.5× speed.</p>
+    <div class="grid two"><figure class="video-card"><video controls muted loop playsinline preload="none" poster="assets/web/videos/cube_placement_wrist_top_left.jpg" width="480" height="480" aria-label="Cube placement, wrist camera"><source src="assets/web/videos/cube_placement_wrist_top_left.mp4" type="video/mp4">Your browser does not support embedded video.</video><figcaption>Cube placement</figcaption></figure>
+<figure class="video-card"><video controls muted loop playsinline preload="none" poster="assets/web/videos/fruit_picking_wrist_top_left.jpg" width="480" height="480" aria-label="Fruit picking, wrist camera"><source src="assets/web/videos/fruit_picking_wrist_top_left.mp4" type="video/mp4">Your browser does not support embedded video.</video><figcaption>Fruit picking</figcaption></figure>
+<figure class="video-card"><video controls muted loop playsinline preload="none" poster="assets/web/videos/push_t_wrist_top_left.jpg" width="480" height="480" aria-label="Push T, wrist camera"><source src="assets/web/videos/push_t_wrist_top_left.mp4" type="video/mp4">Your browser does not support embedded video.</video><figcaption>Push T</figcaption></figure>
+<figure class="video-card"><video controls muted loop playsinline preload="none" poster="assets/web/videos/dishes_and_utensils_wrist_top_left.jpg" width="480" height="480" aria-label="Dishes and utensils, wrist camera"><source src="assets/web/videos/dishes_and_utensils_wrist_top_left.mp4" type="video/mp4">Your browser does not support embedded video.</video><figcaption>Dishes and utensils</figcaption></figure></div>
+  </section>
+
+  <section class="citation" id="paper" aria-labelledby="paper-title">
+    <h2 id="paper-title">The paper</h2>
+    <details class="abstract-details"><summary><span class="abs-hint">Read the abstract</span></summary>
+    <p class="abstract">World-action models commonly adapt pretrained video generators, and vision-language-action models build on pretrained vision-language backbones; both tie policy architecture and inference cost to large transformers designed for generation rather than control. While the knowledge accumulated through large-scale pretraining is certainly useful, it remains unclear how much generation-oriented architectural choices affect control performance, and whether the trade-off required to access this pretraining is worth it. While recent world-action models mostly scale the video backbone and its data, we argue that the choice of latent space is just as critical, and that the policy should be trained natively in that space. In this work, we introduce <strong>Latent Action JEPA (La-JEPA)</strong>, a compact world-action model whose policy transformer is trained from scratch in the feature space of a pretrained V-JEPA 2.1 encoder, so that its architecture and capacity can be chosen for control. Following Fast-WAM, La-JEPA learns to predict future features jointly with actions during training and generates only actions at inference. <strong>Among policies without embodied pretraining, La-JEPA achieves state-of-the-art performance on RoboTwin 2.0, in clean and randomized scenes when trained on clean demonstrations and on average when trained on the full training set, and on LIBERO-Plus with corrected instructions, while using far fewer parameters than the strongest competing policies.</strong> With full training, its success also increases monotonically with model size, showing that the approach scales. Its S and B policies run two to five times faster than Fast-WAM and Faster-WAM while outperforming both on LIBERO-Plus and RoboTwin 2.0. La-JEPA also outperforms the closest JEPA-based methods, LeapBot-WA and JEPA-WAM, on LIBERO-Plus and RoboTwin 2.0 without their pretrained policy backbones. On four real-robot tasks, including contact-heavy pushing and long-horizon multistep manipulation, its average success is comparable to π<sub>0.5</sub>, outperforming non-embodied-pretrained baselines. Through a design study of the choices behind La-JEPA, we show that JEPA features outperform video VAE latents, most clearly out of distribution, and that training-time future prediction choices significantly impact the policy even when future prediction is skipped at inference. These results establish a compact, efficient foundation for JEPA-based world-action modeling: without a generative pretrained policy backbone, La-JEPA is better and faster than far larger policies built on video and language generation models. <strong>Tailoring the policy&#x27;s design, including its latent space, to control can thus matter more than the knowledge transferred from a heavily pretrained generative backbone</strong>, suggesting that robot foundation models may benefit from architectures designed specifically for control rather than inherited from generation.</p>
+    </details>
+    <div class="section-heading"><h3>BibTeX</h3><button class="copy-button" id="copy-bibtex" type="button">Copy BibTeX</button></div>
+    <pre><code id="bibtex">@article{clemente2026lajepa,
+  title   = {La-JEPA: Compact Robot Policies with Latent World Modeling},
+  author  = {Cl{\'e}mente, Mateo and Xue, George Z. and Abyaneh, Amin and Ma, Liheng and Yang, Rui Heng and Cao, Tongtong and Zhang, Zhanguang and Zhang, Yingxue},
+  journal = {arXiv preprint arXiv:2611.08156},
+  year    = {2026}
+}</code></pre>
+    <p id="copy-status" class="copy-status" role="status" aria-live="polite"></p>
+  </section>
+</main>
+<script>
+  document.querySelectorAll('.models').forEach(el => el.addEventListener('click', function (event) {
+    if (this.getAttribute('aria-disabled') === 'true') event.preventDefault();
+  }));
+  const rollouts = Array.from(document.querySelectorAll('.teaser video'));
+  const motionButton = document.getElementById('motion-toggle');
+  function pauseRollouts() {
+    rollouts.forEach(video => video.pause());
+    motionButton.textContent = 'Play videos';
+    motionButton.setAttribute('aria-pressed', 'true');
+  }
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    rollouts.forEach(video => video.removeAttribute('autoplay'));
+    pauseRollouts();
+  }
+  motionButton.addEventListener('click', function () {
+    if (this.getAttribute('aria-pressed') === 'true') {
+      rollouts.forEach(video => { video.play().catch(() => {}); });
+      this.textContent = 'Pause videos';
+      this.setAttribute('aria-pressed', 'false');
+    } else pauseRollouts();
+  });
+  document.getElementById('copy-bibtex').addEventListener('click', async function () {
+    const code = document.getElementById('bibtex');
+    const status = document.getElementById('copy-status');
+    try {
+      if (!navigator.clipboard || !window.isSecureContext) throw new Error('fallback');
+      await navigator.clipboard.writeText(code.textContent);
+      status.textContent = 'BibTeX copied.';
+    } catch (_) {
+      const selection = window.getSelection();
+      const range = document.createRange();
+      range.selectNodeContents(code);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      let copied = false;
+      try { copied = document.execCommand('copy'); } catch (_) {}
+      status.textContent = copied ? 'BibTeX copied.' : 'BibTeX selected. Press Ctrl+C (or ⌘C) to copy.';
+      if (copied) selection.removeAllRanges();
+    }
+  });
+</script>
+<script>
+(function(){
+  const D=[["La-JEPA L (ours)",84.1,88.0,1,3.9],["La-JEPA B (ours)",82.5,87.3,1,4.9],["La-JEPA S (ours)",80.0,86.3,1,6.3],["NowWAM",86.2,86.2,0,0.0],["π0.5 †",84.3,85.7,0,1.4],["π-JEPA-WAM †",84.5,85.2,0,0.6],["Cosmos Policy",80.8,84.9,0,4.1],["ImageWAM",79.7,80.4,0,0.7],["LeapBot-WA †",71.7,79.7,0,8.1],["JEPA-WAM",77.1,77.8,0,0.7],["StarVLA",76.7,77.6,0,0.9],["Fast-WAM",51.5,70.8,0,19.3]]; /* deltas from unrounded results (paper Table 5) */
+  const W=760,L=150,R=56,T=8,RH=30,H=T+RH*D.length+30,x0=50,x1=90;
+  const X=v=>L+(v-x0)/(x1-x0)*(W-L-R);
+  let g='';
+  for(let v=x0;v<=x1;v+=10){g+=`<line x1="${X(v)}" x2="${X(v)}" y1="${T}" y2="${T+RH*D.length}" class="grid"/><text x="${X(v)}" y="${T+RH*D.length+18}" class="tick" text-anchor="middle">${v}</text>`;}
+  D.forEach((d,i)=>{const y=T+RH*i+RH/2,[n,r,c,o,dd]=d,dl=dd.toFixed(1);
+    g+=`<g class="row" data-i="${i}"><rect x="0" y="${y-RH/2}" width="${W}" height="${RH}" class="hit"/>`+
+       `<text x="${L-12}" y="${y+4}" text-anchor="end" class="name${o?' ours':''}">${n}</text>`+
+       `<line x1="${X(r)}" x2="${X(c)}" y1="${y}" y2="${y}" class="link"/>`+
+       `<circle cx="${X(r)}" cy="${y}" r="5.5" class="rel"/><circle cx="${X(c)}" cy="${y}" r="5.5" class="cor"/>`+
+       `<text x="${W-R+10}" y="${y+4}" class="delta">+${dl}</text></g>`;});
+  const el=document.getElementById('lplus-chart');
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%">${g}</svg>`;
+  document.getElementById('lplus-tbody').innerHTML=D.map(d=>`<tr><td>${d[0]}</td><td>${d[1].toFixed(1)}</td><td>${d[2].toFixed(1)}</td><td>+${d[4].toFixed(1)}</td></tr>`).join('');
+
+})();
+</script>
+<script>
+  // play all rollout videos at 1.5x (real-robot footage)
+  document.querySelectorAll('video').forEach(v => { const set = () => { v.defaultPlaybackRate = 1.5; v.playbackRate = 1.5; }; set(); v.addEventListener('loadedmetadata', set); v.addEventListener('play', set); });
+</script>
+<script src="assets/web/charts_data.js"></script>
+<script src="assets/web/charts.js"></script>
+</body>
+</html>
