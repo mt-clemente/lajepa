@@ -23,7 +23,7 @@
   };
   // label offsets (px) for points that would otherwise collide; default is to the right
   const OFF = {
-    libero_ood: { ours_libero_s: [0, 16, "middle"], ours_libero_b: [-9, 0, "end"], ours_libero_l: [9, -2, "start"], nowwam: [9, -7, "start"], cosmos: [9, 6, "start"], fastwam: [-9, 0, "end"] },
+    libero_ood: { ours_libero_s: [0, 16, "middle"], ours_libero_b: [-9, 0, "end"], ours_libero_l: [9, -2, "start"], nowwam: [9, -7, "start"], cosmos: [9, 6, "start"], fastwam: [-9, 0, "end"], fasterwam: [-9, 0, "end"] },
     robotwin_ood: { ours_robotwin_s: [0, 17, "middle"], ours_robotwin_b: [0, -11, "middle"], ours_robotwin_l: [10, 0, "start"], fastwam: [-9, 0, "end"], fasterwam: [-9, 0, "end"] },
     robotwin_full: { ours_full_xl: [0, -12, "middle"], imagewam: [0, -12, "middle"], fastwam: [0, -12, "middle"], fasterwam: [-9, 0, "end"], leapbot: [-9, 6, "end"], qwen: [9, 0, "start"], qwen_scratch: [9, 0, "start"] }
   };
