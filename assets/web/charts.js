@@ -17,7 +17,7 @@
 
   /* ---------------- Fig. 1: success vs deployed parameters, one panel per tab ---------------- */
   const PANELS = {
-    libero_ood: { title: "LIBERO-Plus, corrected instructions", y: [70, 90, 5], note: "" },
+    libero_ood: { title: "LIBERO-Plus, corrected instructions", y: [70, 90, 5], note: "LIBERO-Plus scores use the corrected instructions (see the benchmark bug below)." },
     robotwin_ood: { title: "RoboTwin 2.0, clean training (mean of clean and randomized scenes)", y: [30, 70, 10], note: "* JEPA-WAM estimated from its 20-task results." },
     robotwin_full: { title: "RoboTwin 2.0, full training (mean of clean and randomized scenes)", y: [88, 95, 1], note: "La-JEPA full-training values use one training seed." }
   };
